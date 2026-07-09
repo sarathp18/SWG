@@ -171,183 +171,38 @@
     const mainDisplay = document.getElementById('main-display');
     const resDiv = document.getElementById('results');
 
-    function updateScreen() {
-      let eqString = gauges.join(" + ");
-      if (gauges.length > 0 && currentNum === "") {
-        eqString += " + ";
+    // Initialize Web Audio API context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playClickSound() {
+      // Browsers require interaction to resume audio context if it's suspended
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
-      eqDisplay.innerText = eqString;
       
-      if (!justCalculated) {
-        mainDisplay.innerText = currentNum || "0";
-      }
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      // Create a short "click/pop" sound
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime); // Pitch of the click
+      oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05); 
+      
+      gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); // Fade out quickly
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.05); // Sound lasts for 50ms
     }
 
-    // Function to trigger a short vibration
     function vibratePhone() {
       if (navigator.vibrate) {
-        // Vibrate for 50 milliseconds. You can increase this number if you want a stronger/longer vibration.
-        navigator.vibrate(50); 
+        navigator.vibrate(50); // Vibrate for 50 milliseconds
       }
     }
-
-    function press(val) {
-      // Trigger the haptic feedback on every button press
-      vibratePhone();
-
-      if (justCalculated && val !== '=' && val !== '+') {
-        gauges = [];
-        currentNum = "";
-        justCalculated = false;
-        resDiv.style.display = 'none';
-      }
-
-      if (!justCalculated) {
-        resDiv.style.display = 'none';
-      }
-
-      if (val === 'C') {
-        currentNum = "";
-        gauges = [];
-        justCalculated = false;
-        resDiv.style.display = 'none';
-        updateScreen();
-        return;
-      }
-
-      if (val === '+') {
-        if (currentNum !== "") {
-          gauges.push(parseInt(currentNum));
-          currentNum = "";
-        }
-        justCalculated = false;
-        updateScreen();
-        return;
-      }
-
-      if (val === '=') {
-        if (currentNum !== "") {
-          gauges.push(parseInt(currentNum));
-          currentNum = "";
-        }
-        
-        justCalculated = false; 
-        updateScreen();
-        
-        if (gauges.length > 0) {
-          calculateResults();
-        }
-        return;
-      }
-
-      if (currentNum.length < 2) {
-        currentNum += val;
-        updateScreen();
-      }
-    }
-
-    function calculateResults() {
-      let sum = 0;
-      
-      for (let g of gauges) {
-        if (!D[g]) {
-          mainDisplay.innerText = "Error";
-          resDiv.innerHTML = `<b style="color:#d32f2f;">Error: SWG ${g} is unsupported. Use 1-40.</b>`;
-          resDiv.style.display = 'block';
-          justCalculated = true;
-          return;
-        }
-        sum += D[g] * D[g];
-      }
-
-      let de = Math.sqrt(sum);
-      let area = Math.PI * de * de / 4;
-      let dec = 'Out of range';
-      
-      for (let g = 1; g < 40; g++) {
-        if (de <= D[g] && de >= D[g+1]) {
-          dec = (g + (D[g] - de) / (D[g] - D[g+1])).toFixed(2);
-          break;
-        }
-      }
-      
-      if (de > D[1]) {
-        dec = 'Thicker than SWG 1';
-      }
-
-      let near = (dec === 'Out of range' || dec === 'Thicker than SWG 1') ? 'N/A' : Math.round(parseFloat(dec));
-      
-      resDiv.innerHTML = `
-        <b>Equivalent SWG:</b> ${dec}<br>
-        <b>Diameter:</b> ${de.toFixed(3)} mm<br>
-        <b>Area:</b> ${area.toFixed(3)} mm²<br>
-        <b>Nearest Standard SWG:</b> ${near}
-      `;
-      resDiv.style.display = 'block';
-      
-      mainDisplay.innerText = dec;
-      
-      justCalculated = true;
-    }
-  </script>
-</body>
-</html>
-      background: #2e7d32;
-      color: #fff;
-      font-size: 20px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .btn-equals:active { background: #1b5e20; }
-  </style>
-</head>
-<body>
-
-  <div class="calculator">
-    <div class="screen-container">
-      <div id="equation"></div>
-      <div id="main-display">0</div>
-    </div>
-
-    <div id="results"></div>
-
-    <div class="keypad">
-      <button onclick="press('1')">1</button>
-      <button onclick="press('2')">2</button>
-      <button onclick="press('3')">3</button>
-      
-      <button onclick="press('4')">4</button>
-      <button onclick="press('5')">5</button>
-      <button onclick="press('6')">6</button>
-      
-      <button onclick="press('7')">7</button>
-      <button onclick="press('8')">8</button>
-      <button onclick="press('9')">9</button>
-      
-      <button onclick="press('C')" class="btn-clear">Clear</button>
-      <button onclick="press('0')">0</button>
-      <button onclick="press('+')" class="btn-operator">+</button>
-      
-      <button onclick="press('=')" class="btn-equals"> Calculate</button>
-    </div>
-  </div>
-
-  <script>
-    // Updated dictionary to support SWG 1 through 40
-    const D = {
-      1: 7.620, 2: 7.010, 3: 6.401, 4: 5.893, 5: 5.385, 6: 4.877, 7: 4.470, 8: 4.064, 9: 3.658, 10: 3.251,
-      11: 2.946, 12: 2.642, 13: 2.337, 14: 2.032, 15: 1.829, 16: 1.626, 17: 1.422, 18: 1.219, 19: 1.016,
-      20: 0.914, 21: 0.813, 22: 0.711, 23: 0.610, 24: 0.559, 25: 0.508, 26: 0.457, 27: 0.417, 28: 0.376, 29: 0.345,
-      30: 0.315, 31: 0.295, 32: 0.274, 33: 0.254, 34: 0.234, 35: 0.213, 36: 0.193, 37: 0.173, 38: 0.152, 39: 0.132, 40: 0.122
-    };
-
-    let currentNum = "";
-    let gauges = [];
-    let justCalculated = false;
-
-    const eqDisplay = document.getElementById('equation');
-    const mainDisplay = document.getElementById('main-display');
-    const resDiv = document.getElementById('results');
 
     function updateScreen() {
       let eqString = gauges.join(" + ");
@@ -362,6 +217,10 @@
     }
 
     function press(val) {
+      // Trigger haptic feedback and the click sound
+      vibratePhone();
+      playClickSound();
+
       if (justCalculated && val !== '=' && val !== '+') {
         gauges = [];
         currentNum = "";
