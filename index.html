@@ -174,7 +174,40 @@
     // Initialize Web Audio API context
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    
+    function playClickSound() {
+      // Browsers require interaction to resume audio context
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      // Generate a tiny fraction of a second of white noise
+      const bufferSize = audioCtx.sampleRate * 0.05; // 50 milliseconds
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1; 
+      }
+      
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      
+      // Run the noise through a low-pass filter to muffle it into a "thock/clack"
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800; // Lower numbers sound deeper, higher is clickier
+      
+      // Quickly fade out the sound so it snaps off sharply
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+      
+      // Connect the pieces and play
+      noiseSource.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      noiseSource.start(audioCtx.currentTime);
+    }
 
     function vibratePhone() {
       if (navigator.vibrate) {
@@ -203,41 +236,7 @@
         gauges = [];
         currentNum = "";
         justCalculated = false;
-        resDiv.style.display     function playClickSound() {
-      // Browsers require interaction to resume audio context
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      
-      // 1. Generate a tiny fraction of a second of white noise
-      const bufferSize = audioCtx.sampleRate * 0.05; // 50 milliseconds
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1; 
-      }
-      
-      const noiseSource = audioCtx.createBufferSource();
-      noiseSource.buffer = buffer;
-      
-      // 2. Run the noise through a low-pass filter to muffle it into a "thock/clack"
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 800; // Lower numbers sound deeper/thockier, higher is clickier
-      
-      // 3. Quickly fade out the sound so it snaps off sharply
-      const gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
-      
-      // Connect the pieces and play
-      noiseSource.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      noiseSource.start(audioCtx.currentTime);
-    }
-= 'none';
+        resDiv.style.display = 'none';
       }
 
       if (!justCalculated) {
