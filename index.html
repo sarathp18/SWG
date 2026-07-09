@@ -174,32 +174,7 @@
     // Initialize Web Audio API context
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function playClickSound() {
-      // Browsers require interaction to resume audio context if it's suspended
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      // Changed to 'square' wave for a more digital/electronic sound
-      oscillator.type = 'square'; 
-      
-      // Raised the pitch to 1200Hz for a crisp beep
-      oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime); 
-      oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.03); 
-      
-      // Lowered the starting volume to 0.3 so the high pitch isn't too harsh
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03); 
-      
-      oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.03); // Shortened duration to 30ms (0.03s)
-    }
+    
 
     function vibratePhone() {
       if (navigator.vibrate) {
@@ -228,7 +203,41 @@
         gauges = [];
         currentNum = "";
         justCalculated = false;
-        resDiv.style.display = 'none';
+        resDiv.style.display     function playClickSound() {
+      // Browsers require interaction to resume audio context
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      // 1. Generate a tiny fraction of a second of white noise
+      const bufferSize = audioCtx.sampleRate * 0.05; // 50 milliseconds
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1; 
+      }
+      
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      
+      // 2. Run the noise through a low-pass filter to muffle it into a "thock/clack"
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800; // Lower numbers sound deeper/thockier, higher is clickier
+      
+      // 3. Quickly fade out the sound so it snaps off sharply
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+      
+      // Connect the pieces and play
+      noiseSource.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      noiseSource.start(audioCtx.currentTime);
+    }
+= 'none';
       }
 
       if (!justCalculated) {
