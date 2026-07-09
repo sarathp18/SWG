@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+body{font-family:Arial;background:#eef4fb;margin:0;padding:20px}
+.card{max-width:520px;margin:auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+h2{text-align:center;color:#1565c0}input,button{width:100%;padding:12px;font-size:18px;border-radius:8px;box-sizing:border-box}
+input{border:1px solid #bbb}button{margin-top:12px;background:#1976d2;color:#fff;border:none;font-weight:bold}
+#out{margin-top:16px;background:#e8f5e9;padding:12px;border-left:5px solid #2e7d32;border-radius:8px}
+</style></head><body><div class=card><h2>Decimal SWG Calculator</h2>
+<input id=in placeholder="27,29 or 24,27,28"><button onclick="calc()">Calculate</button><div id=out>Enter values and press Calculate.</div></div>
+<script>
+const D={20:0.914,21:0.813,22:0.711,23:0.610,24:0.559,25:0.508,26:0.457,27:0.417,28:0.376,29:0.345,30:0.315,31:0.295,32:0.274,33:0.254,34:0.234,35:0.213,36:0.193,37:0.173,38:0.152,39:0.132,40:0.122};
+function dia(g){g=parseFloat(g);if(isNaN(g))return null;if(Number.isInteger(g))return D[g];
+let a=Math.floor(g),b=Math.ceil(g);if(D[a]==undefined||D[b]==undefined)return null;return D[a]+(D[b]-D[a])*(g-a);}
+function calc(){let vals=document.getElementById('in').value.split(',').map(x=>x.trim()).filter(Boolean);let sum=0;
+for(let s of vals){let d=dia(s);if(d==null){out.innerHTML='Invalid SWG: '+s;return;}sum+=d*d;}
+let de=Math.sqrt(sum),area=Math.PI*de*de/4;let dec='Out of range';
+for(let g=20;g<40;g++){if(de<=D[g]&&de>=D[g+1]){dec=(g+(D[g]-de)/(D[g]-D[g+1])).toFixed(2);break;}}
+let near=dec==='Out of range'?'N/A':Math.round(parseFloat(dec));
+out.innerHTML='<b>Equivalent SWG:</b> '+dec+'<br><b>Diameter:</b> '+de.toFixed(3)+' mm<br><b>Area:</b> '+area.toFixed(3)+' mm²<br><b>Nearest Standard SWG:</b> '+near;}
+</script></body></html>
