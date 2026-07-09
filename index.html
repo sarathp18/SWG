@@ -86,7 +86,7 @@
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    /* Expanded Details Area (Text color is White) */
+    /* Expanded Details Area */
     #expanded-details {
       display: none;
       text-align: left;
@@ -120,29 +120,39 @@
       background: #1976d2; 
     }
 
-    /* Graph / Scale Design */
+    /* Graph / Scale Design Updates */
     .scale-container {
       margin-top: 25px;
-      padding: 0 10px;
       position: relative;
     }
     .scale-line {
       width: 100%;
-      height: 10px;
+      height: 12px;
       border-bottom: 2px solid #a5d6a7;
-      border-left: 2px solid #a5d6a7;
-      border-right: 2px solid #a5d6a7;
+      border-left: 2px solid #a5d6a7; /* Start Line */
+      border-right: 2px solid #a5d6a7; /* End Line */
       box-sizing: border-box;
+      position: relative; /* Important for exact marker positioning */
+    }
+    .scale-mid-tick {
+      position: absolute;
+      left: 50%;
+      bottom: -2px;
+      width: 2px;
+      height: 6px;
+      background: #a5d6a7;
+      transform: translateX(-50%);
     }
     .scale-marker {
       position: absolute;
-      top: -12px;
+      top: -14px;
       width: 0; 
       height: 0; 
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
       border-top: 12px solid #fff;
-      transform: translateX(-50%);
+      transform: translateX(-50%); /* Perfect center alignment */
+      z-index: 2;
     }
     .scale-labels {
       display: flex;
@@ -377,7 +387,7 @@
       }
 
       let formattedDec = dec.toFixed(4);
-      let shortDec = dec.toFixed(2); // 2 digit version for main display
+      let shortDec = dec.toFixed(2); 
       let near = Math.round(dec);
 
       let lower = Math.floor(dec);
@@ -385,6 +395,7 @@
       if (lower === upper) upper = lower + 1;
       let progress = (dec - lower) * 100;
 
+      // Graph injected with precise HTML structure
       document.getElementById('expanded-details').innerHTML = `
         <div>Equivalent swg : ${formattedDec}</div>
         <div>Diameter : ${de_mm.toFixed(3)} mm</div>
@@ -392,8 +403,10 @@
         <div>Nearest standard SWG : ${near}</div>
         
         <div class="scale-container">
-          <div class="scale-marker" style="left: ${progress}%;"></div>
-          <div class="scale-line"></div>
+          <div class="scale-line">
+            <div class="scale-mid-tick"></div>
+            <div class="scale-marker" style="left: ${progress}%;"></div>
+          </div>
           <div class="scale-labels">
             <span>${lower}</span>
             <span>${upper}</span>
@@ -401,7 +414,6 @@
         </div>
       `;
 
-      // Big text shows 2 digits
       mainDisplay.innerText = shortDec; 
       arrowIcon.style.display = 'block'; 
       justCalculated = true;
