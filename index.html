@@ -468,8 +468,7 @@
         }
         
         combos.sort((a, b) => {
-          if (a.priority !== b.priority) return a.priority - b.priority;
-          return a.diff - b.diff;
+          return Math.abs(targetGauge - a.eqDec) - Math.abs(targetGauge - b.eqDec);
         });
 
         let de_mm = Math.sqrt(targetSqMils) * 0.0254;
@@ -531,8 +530,7 @@
         }
         
         results.sort((a, b) => {
-          if (a.priority !== b.priority) return a.priority - b.priority;
-          return a.diffSq - b.diffSq;
+          return Math.abs(targetA - a.eqDec) - Math.abs(targetA - b.eqDec);
         });
         
         outputHTML += `
