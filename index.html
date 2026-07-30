@@ -11,6 +11,7 @@
   <style>
     * {
       -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
     }
 
     body { 
@@ -22,7 +23,6 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      box-sizing: border-box;
     }
     
     .calculator { 
@@ -33,7 +33,6 @@
       border-radius: 24px; 
       box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
       position: relative;
-      box-sizing: border-box;
       overflow: hidden;
     }
 
@@ -48,7 +47,6 @@
       height: 110px; 
       transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 2;
-      box-sizing: border-box;
       text-align: right;
     }
 
@@ -113,6 +111,13 @@
       margin-bottom: 2px;
       line-height: 1.4;
     }
+    
+    .error-text {
+      color: #ef5350;
+      font-size: 15px;
+      text-align: center;
+      margin-top: 20px;
+    }
 
     .combinations-container {
       margin-top: 10px;
@@ -142,93 +147,39 @@
       color: #ffffff;
     }
     
-    .green-bracket {
-      color: #a5d6a7;
-      font-weight: bold;
-    }
+    .green-bracket { color: #a5d6a7; font-weight: bold; }
+    .white-bracket { color: #ffffff; font-weight: bold; }
 
     @keyframes fadeIn { to { opacity: 1; } }
 
-    .expanded-mode .screen-container { 
-      height: 400px; 
-    }
+    .expanded-mode .screen-container { height: 400px; }
+    .expanded-mode #expand-arrow { display: none !important; }
+    .expanded-mode #expanded-details { display: block; animation: fadeIn 0.3s ease-in 0.1s forwards; }
     
-    .expanded-mode #expand-arrow { 
-      display: none !important; 
-    }
-    
-    .expanded-mode #expanded-details { 
-      display: block; 
-      animation: fadeIn 0.3s ease-in 0.1s forwards; 
-    }
-    
-    .expanded-mode .keypad-top { 
-      opacity: 0; 
-      pointer-events: none; 
-      transform: translateY(20px); 
-    }
-    
-    .expanded-mode .btn-action {
-      background: #1976d2; 
-    }
+    /* Hide all keypads when expanded */
+    .expanded-mode .keypads { opacity: 0; pointer-events: none; transform: translateY(20px); }
 
-    .scale-container {
-      margin-top: 25px;
-      position: relative;
-    }
-    
-    .scale-line {
-      width: 100%;
-      height: 12px;
-      border-bottom: 2px solid #a5d6a7;
-      border-left: 2px solid #a5d6a7;
-      border-right: 2px solid #a5d6a7;
-      box-sizing: border-box;
-      position: relative;
-    }
-    
-    .scale-mid-tick {
-      position: absolute;
-      left: 50%;
-      bottom: -2px;
-      width: 2px;
-      height: 6px;
-      background: #a5d6a7;
-      transform: translateX(-50%);
-    }
-    
-    .scale-marker {
-      position: absolute;
-      top: -14px;
-      width: 0; 
-      height: 0; 
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 12px solid #fff;
-      transform: translateX(-50%); 
-      z-index: 2;
-    }
-    
-    .scale-labels {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-      color: #fff;
-      font-size: 14px;
-      font-weight: bold;
-    }
+    .scale-container { margin-top: 25px; position: relative; }
+    .scale-line { width: 100%; height: 12px; border-bottom: 2px solid #a5d6a7; border-left: 2px solid #a5d6a7; border-right: 2px solid #a5d6a7; position: relative; }
+    .scale-mid-tick { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 6px; background: #a5d6a7; transform: translateX(-50%); }
+    .scale-marker { position: absolute; top: -14px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #fff; transform: translateX(-50%); z-index: 2; }
+    .scale-labels { display: flex; justify-content: space-between; margin-top: 6px; color: #fff; font-size: 14px; font-weight: bold; }
 
-    .keypad-top { 
+    /* Keypad Section */
+    .keypads {
       position: absolute;
-      top: 150px;
+      top: 145px;
       left: 20px;
       right: 20px;
-      display: grid; 
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 12px; 
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       transition: opacity 0.2s, transform 0.3s;
       z-index: 1;
     }
+
+    .grid-3x3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .grid-3x2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     
     button {
       background: #f0f4f8; 
@@ -237,33 +188,47 @@
       font-size: 24px;
       font-weight: 600; 
       color: #333; 
-      height: 56px; 
+      height: 52px; 
       cursor: pointer; 
       user-select: none;
       transition: all 0.1s ease-in-out;
     }
     
+    /* Standard numbers */
     button:active { transform: scale(0.95); background: #333; color: #fff; }
     
-    .btn-clear { background: #d32f2f; color: #ffffff; font-size: 18px; }
-    .btn-clear:active { background: #b71c1c; }
+    /* Color Inversion for Special Buttons */
+    .btn-clear { font-size: 18px; color: #d32f2f; }
+    .btn-clear:active { background: #d32f2f !important; color: #fff !important; }
     
     .btn-operator { background: #1976d2; color: #fff; font-size: 28px; }
+    .btn-operator:active { background: #fff !important; color: #1976d2 !important; }
     
-    .btn-action { 
+    .btn-calculate { background: #2e7d32; color: #fff; font-size: 28px; }
+    .btn-calculate:active { background: #fff !important; color: #2e7d32 !important; }
+    
+    .btn-backspace { font-size: 20px; }
+
+    /* The big close button shown only when expanded */
+    .btn-close { 
       position: absolute;
       bottom: 20px;
       left: 20px;
       right: 20px;
-      background: #2e7d32; 
+      background: #1976d2; 
       color: #fff; 
       font-size: 20px; 
       text-transform: uppercase; 
       letter-spacing: 1px; 
       z-index: 3;
+      height: 56px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      display: none;
     }
-    
-    .btn-action:active { filter: brightness(0.8); }
+    .btn-close:active { filter: brightness(0.8); }
+    .expanded-mode .btn-close { display: block; animation: fadeIn 0.3s ease-in forwards; }
   </style>
 </head>
 <body>
@@ -277,22 +242,29 @@
       <div id="expanded-details"></div>
     </div>
 
-    <div class="keypad-top" id="keypad-top">
-      <button onclick="press('1')">1</button>
-      <button onclick="press('2')">2</button>
-      <button onclick="press('3')">3</button>
-      <button onclick="press('4')">4</button>
-      <button onclick="press('5')">5</button>
-      <button onclick="press('6')">6</button>
-      <button onclick="press('7')">7</button>
-      <button onclick="press('8')">8</button>
-      <button onclick="press('9')">9</button>
-      <button onclick="press('C')" class="btn-clear">CLEAR</button>
-      <button onclick="press('0')">0</button>
-      <button onclick="press('+')" class="btn-operator">+</button>
+    <div class="keypads">
+      <div class="grid-3x3">
+        <button onclick="press('1')">1</button>
+        <button onclick="press('2')">2</button>
+        <button onclick="press('3')">3</button>
+        <button onclick="press('4')">4</button>
+        <button onclick="press('5')">5</button>
+        <button onclick="press('6')">6</button>
+        <button onclick="press('7')">7</button>
+        <button onclick="press('8')">8</button>
+        <button onclick="press('9')">9</button>
+      </div>
+      <div class="grid-3x2">
+        <button onclick="press('C')" class="btn-clear">Clear</button>
+        <button onclick="press('0')">0</button>
+        <button onclick="press('BACK')" class="btn-backspace">⌫</button>
+        <button onclick="press('+')" class="btn-operator">+</button>
+        <button onclick="press('-')" class="btn-operator">-</button>
+        <button onclick="press('=')" class="btn-calculate">=</button>
+      </div>
     </div>
 
-    <button id="action-btn" class="btn-action" onclick="press('=')">CALCULATE</button>
+    <button class="btn-close" onclick="closeScreen()">CLOSE</button>
   </div>
 
   <script>
@@ -304,15 +276,15 @@
       41: 4.4, 42: 4.0, 43: 3.6, 44: 3.2, 45: 2.8, 46: 2.4, 47: 2.0, 48: 1.6, 49: 1.2, 50: 1.0
     };
 
+    let tokens = []; 
     let currentNum = "";
-    let gauges = [];
     let justCalculated = false;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const eqDisplay = document.getElementById('equation');
     const mainDisplay = document.getElementById('main-display');
     const arrowIcon = document.getElementById('expand-arrow');
-    const actionBtn = document.getElementById('action-btn');
+    const calcApp = document.getElementById('calc-app');
 
     function playClickSound() {
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -334,25 +306,37 @@
     }
 
     function updateScreen() {
-      let eqString = gauges.join(" + ");
-      if (gauges.length > 0 && currentNum === "") eqString += " + ";
+      let eqString = tokens.join(" ");
+      if (currentNum !== "" && tokens.length > 0) eqString += " " + currentNum;
+      else if (currentNum !== "") eqString = currentNum;
+      
       eqDisplay.innerText = eqString;
-      if (!justCalculated) mainDisplay.innerText = currentNum || "0";
+      
+      if (!justCalculated) {
+        if (currentNum !== "") {
+          mainDisplay.innerText = currentNum;
+        } else if (tokens.length > 0) {
+          let last = tokens[tokens.length - 1];
+          if (last === '+' || last === '-') {
+            mainDisplay.innerText = tokens.length > 1 ? tokens[tokens.length - 2] : "0";
+          } else {
+            mainDisplay.innerText = last;
+          }
+        } else {
+          mainDisplay.innerText = "0";
+        }
+      }
     }
 
     function expandScreen() {
       vibratePhone();
-      document.getElementById('calc-app').classList.add('expanded-mode');
-      actionBtn.innerText = "CLOSE";
-      actionBtn.onclick = closeScreen;
+      calcApp.classList.add('expanded-mode');
     }
 
     function closeScreen() {
       vibratePhone();
-      document.getElementById('calc-app').classList.remove('expanded-mode');
-      actionBtn.innerText = "CALCULATE";
-      actionBtn.onclick = () => press('=');
-      if (justCalculated && mainDisplay.innerText !== "Error") {
+      calcApp.classList.remove('expanded-mode');
+      if (justCalculated && tokens.length > 0) {
         arrowIcon.style.display = 'block';
       }
     }
@@ -363,25 +347,51 @@
       
       closeScreen(); 
 
-      if (justCalculated && val !== '=' && val !== '+') {
-        gauges = []; currentNum = ""; justCalculated = false; arrowIcon.style.display = 'none';
+      if (justCalculated && val !== '=' && val !== '+' && val !== '-' && val !== 'BACK') {
+        tokens = []; currentNum = ""; justCalculated = false; arrowIcon.style.display = 'none';
       }
 
       if (val === 'C') {
-        currentNum = ""; gauges = []; justCalculated = false; arrowIcon.style.display = 'none';
+        currentNum = ""; tokens = []; justCalculated = false; arrowIcon.style.display = 'none';
         updateScreen(); return;
       }
 
-      if (val === '+') {
-        if (currentNum !== "") { gauges.push(parseInt(currentNum)); currentNum = ""; }
+      if (val === 'BACK') {
+        justCalculated = false; arrowIcon.style.display = 'none';
+        if (currentNum.length > 0) {
+          currentNum = currentNum.slice(0, -1);
+        } else if (tokens.length > 0) {
+          let last = tokens.pop();
+          if (last === '+' || last === '-') {
+            currentNum = tokens.length > 0 ? tokens.pop().toString() : "";
+          } else {
+            currentNum = last.toString().slice(0, -1);
+          }
+        }
+        updateScreen(); return;
+      }
+
+      if (val === '+' || val === '-') {
+        if (currentNum !== "") { 
+          tokens.push(parseInt(currentNum)); 
+          tokens.push(val); 
+          currentNum = ""; 
+        } else if (tokens.length > 0) {
+          let last = tokens[tokens.length - 1];
+          if (last === '+' || last === '-') tokens[tokens.length - 1] = val; 
+          else tokens.push(val);
+        }
         justCalculated = false; arrowIcon.style.display = 'none';
         updateScreen(); return;
       }
 
       if (val === '=') {
-        if (currentNum !== "") { gauges.push(parseInt(currentNum)); currentNum = ""; }
+        if (currentNum !== "") { tokens.push(parseInt(currentNum)); currentNum = ""; }
+        if (tokens.length > 0 && (tokens[tokens.length - 1] === '+' || tokens[tokens.length - 1] === '-')) {
+          tokens.pop();
+        }
         updateScreen();
-        if (gauges.length > 0) calculateResults();
+        if (tokens.length > 0) calculateResults();
         return;
       }
 
@@ -403,106 +413,71 @@
       return 0;
     }
 
-    function findCombos(wires, targetG, targetSq) {
-      let res = [];
-      for (let i = 0; i < wires.length; i++) {
-        for (let j = i; j < wires.length; j++) {
-          let w1 = wires[i];
-          let w2 = wires[j];
-          
-          if (w1 === targetG || w2 === targetG) continue;
-          
-          let sumSq = (MILS[w1] * MILS[w1]) + (MILS[w2] * MILS[w2]);
-          let eqDec = getEquivalentDecimalSWG(sumSq);
-          
-          if (Math.abs(targetG - eqDec) <= 0.5) {
-            res.push({ w1: w1, w2: w2, diff: Math.abs(sumSq - targetSq), sumSq: sumSq, eqDec: eqDec });
-          }
-        }
+    function getPriority(w1, w2) {
+      let minW = Math.min(w1, w2);
+      let maxW = Math.max(w1, w2);
+      if (minW >= 20 && maxW <= 30) return 1;
+      if (minW >= 11 && maxW <= 40) return 2;
+      return 3;
+    }
+
+    function renderError(msg) {
+      // Displays error on screen WITHOUT enlarging
+      mainDisplay.innerText = "Error";
+      eqDisplay.innerText = msg;
+      arrowIcon.style.display = 'none';
+      document.getElementById('expanded-details').innerHTML = ""; // Clear old details
+      justCalculated = true;
+    }
+
+    function showDetails(html, autoExpand) {
+      document.getElementById('expanded-details').innerHTML = html;
+      justCalculated = true;
+      if (autoExpand) {
+        setTimeout(expandScreen, 50);
+      } else {
+        arrowIcon.style.display = 'block';
       }
-      return res;
     }
 
     function calculateResults() {
-      let sumSqMils = 0;
-      let hasError = false;
-      let errorMsg = "";
-
-      for (let g of gauges) {
-        if (!MILS[g]) {
-          hasError = true;
-          errorMsg = `SWG ${g} unsupported (1-50)`;
-          break;
-        }
-        sumSqMils += (MILS[g] * MILS[g]);
-      }
-
-      if (hasError) {
-        mainDisplay.innerText = "Error";
-        eqDisplay.innerText = errorMsg;
-        arrowIcon.style.display = 'none';
-        justCalculated = true;
-        return;
-      }
-
-      let de_mils = Math.sqrt(sumSqMils);
-      let de_mm = de_mils * 0.0254;
-      let area_mm2 = Math.PI * (de_mm * de_mm) / 4;
+      let outputHTML = "";
       
-      if (de_mils > MILS[1]) {
-        mainDisplay.innerText = "Error";
-        eqDisplay.innerText = "Thicker than SWG 1";
-        arrowIcon.style.display = 'none';
-        justCalculated = true;
-        return;
-      }
-      if (de_mils < MILS[50]) {
-        mainDisplay.innerText = "Error";
-        eqDisplay.innerText = "Thinner than SWG 50";
-        arrowIcon.style.display = 'none';
-        justCalculated = true;
-        return;
+      for (let i = 0; i < tokens.length; i += 2) {
+        let g = tokens[i];
+        if (!MILS[g]) return renderError(`SWG ${g} unsupported (1-50)`);
       }
 
-      let dec = getEquivalentDecimalSWG(sumSqMils);
-      let formattedDec = dec.toFixed(4);
-      let shortDec = dec.toFixed(2); 
-      let near = Math.round(dec);
-
-      let outputHTML = `
-        <div class="nearest-swg">Nearest SWG : ${near}</div>
-        <div class="normal-text">Equivalent swg : ${formattedDec}</div>
-        <div class="normal-text">Diameter : ${de_mm.toFixed(3)} mm</div>
-        <div class="normal-text">Area : ${area_mm2.toFixed(3)} mm²</div>
-      `;
-
-      if (gauges.length === 1) {
-        let targetGauge = gauges[0];
+      // Mode 1: Combinations (e.g., 25 =) -> Auto-expands
+      if (tokens.length === 1) {
+        let targetGauge = tokens[0];
         let targetSqMils = MILS[targetGauge] * MILS[targetGauge];
+        let combos = [];
         
-        let allowedWires = [];
-        for (let i = 20; i <= 30; i++) allowedWires.push(i);
-
-        let combos = findCombos(allowedWires, targetGauge, targetSqMils);
-        let expandUp = 30;
-        let expandDown = 20;
-
-        while (combos.length < 15 && (expandUp < 50 || expandDown > 1)) {
-          if (expandUp < 50) { 
-            expandUp++; 
-            allowedWires.push(expandUp); 
+        for (let i = 1; i <= 50; i++) {
+          for (let j = i; j <= 50; j++) {
+            if (i === targetGauge || j === targetGauge) continue;
+            let sumSq = (MILS[i] * MILS[i]) + (MILS[j] * MILS[j]);
+            let eqDec = getEquivalentDecimalSWG(sumSq);
+            let diffSq = Math.abs(sumSq - targetSqMils);
+            
+            if (Math.abs(targetGauge - eqDec) <= 0.5) {
+              combos.push({ w1: i, w2: j, diff: diffSq, eqDec: eqDec, priority: getPriority(i, j) });
+            }
           }
-          if (expandDown > 1) { 
-            expandDown--; 
-            allowedWires.push(expandDown); 
-          }
-          allowedWires.sort((a,b) => a-b);
-          combos = findCombos(allowedWires, targetGauge, targetSqMils);
         }
+        
+        combos.sort((a, b) => {
+          if (a.priority !== b.priority) return a.priority - b.priority;
+          return a.diff - b.diff;
+        });
 
-        combos.sort((a, b) => a.diff - b.diff);
-
+        let de_mm = Math.sqrt(targetSqMils) * 0.0254;
+        let area_mm2 = Math.PI * (de_mm * de_mm) / 4;
+        
         outputHTML += `
+          <div class="normal-text">Diameter : ${de_mm.toFixed(3)} mm</div>
+          <div class="normal-text">Area : ${area_mm2.toFixed(3)} mm²</div>
           <div class="combinations-container">
             <div class="combo-title">Top Combinations:</div>
         `;
@@ -514,11 +489,13 @@
             for (let k = 0; k < displayCount; k++) {
               let eqDec = combos[k].eqDec.toFixed(2);
               let comboNear = Math.round(combos[k].eqDec);
+              let diff = Math.abs(targetGauge - combos[k].eqDec);
+              let bracketClass = diff < 0.1 ? 'green-bracket' : 'white-bracket';
               
               outputHTML += `
                 <div class="combo-item">
                   <span>${combos[k].w1} + ${combos[k].w2}</span>
-                  <span>≈ swg ${comboNear} <span class="green-bracket">[${eqDec}]</span></span>
+                  <span>≈ swg ${comboNear} <span class="${bracketClass}">[${eqDec}]</span></span>
                 </div>
               `;
             }
@@ -526,34 +503,100 @@
         outputHTML += `</div>`;
         mainDisplay.innerText = targetGauge; 
         
-        setTimeout(expandScreen, 50); 
-
-      } else {
-        let lower = Math.floor(dec);
-        let upper = Math.ceil(dec);
-        if (lower === upper) upper = lower + 1;
-        let progress = (dec - lower) * 100;
-
+        showDetails(outputHTML, true); // Auto-expands
+        return;
+      }
+      
+      // Mode 2: Subtraction (e.g., 25 - 28 =) -> Auto-expands
+      if (tokens.includes('-')) {
+        if (tokens.length !== 3 || tokens[1] !== '-') return renderError("Use format: Target - Given");
+        
+        let targetA = tokens[0], givenB = tokens[2];
+        let areaA = MILS[targetA] * MILS[targetA];
+        let areaB = MILS[givenB] * MILS[givenB];
+        
+        if (areaA <= areaB) return renderError(`SWG ${targetA} must be thicker than SWG ${givenB}`);
+        
+        let results = [];
+        
+        for (let i = 1; i <= 50; i++) {
+          if (i === targetA) continue;
+          let testArea = areaB + (MILS[i] * MILS[i]);
+          let eqDec = getEquivalentDecimalSWG(testArea);
+          let diffSq = Math.abs(testArea - areaA);
+          
+          if (Math.abs(targetA - eqDec) <= 0.5) {
+            results.push({ w1: givenB, w2: i, diffSq: diffSq, eqDec: eqDec, priority: getPriority(givenB, i) });
+          }
+        }
+        
+        results.sort((a, b) => {
+          if (a.priority !== b.priority) return a.priority - b.priority;
+          return a.diffSq - b.diffSq;
+        });
+        
         outputHTML += `
-          <div class="scale-container">
-            <div class="scale-line">
-              <div class="scale-mid-tick"></div>
-              <div class="scale-marker" style="left: ${progress}%;"></div>
-            </div>
-            <div class="scale-labels">
-              <span>${lower}</span>
-              <span>${upper}</span>
-            </div>
-          </div>
+          <div class="combinations-container">
+            <div class="combo-title">To make SWG ${targetA}, add to SWG ${givenB}:</div>
         `;
-        mainDisplay.innerText = shortDec; 
+        
+        let displayCount = Math.min(15, results.length);
+        if (displayCount === 0) {
+            outputHTML += `<div class="normal-text" style="color:#ffb74d;">No close combinations found</div>`;
+        } else {
+            for (let k = 0; k < displayCount; k++) {
+              let eqDec = results[k].eqDec.toFixed(2);
+              let diff = Math.abs(targetA - results[k].eqDec);
+              let bracketClass = diff < 0.1 ? 'green-bracket' : 'white-bracket'; 
+              
+              outputHTML += `
+                <div class="combo-item">
+                  <span>${results[k].w1} + ${results[k].w2}</span>
+                  <span>≈ swg ${Math.round(results[k].eqDec)} <span class="${bracketClass}">[${eqDec}]</span></span>
+                </div>
+              `;
+            }
+        }
+        outputHTML += `</div>`;
+        mainDisplay.innerText = targetA;
+        
+        showDetails(outputHTML, true); // Auto-expands
+        return;
       }
 
-      document.getElementById('expanded-details').innerHTML = outputHTML;
-      if (gauges.length > 1) {
-        arrowIcon.style.display = 'block'; 
+      // Mode 3: Addition Scale (e.g., 25 + 25 =) -> Does NOT auto-expand
+      let sumSqMils = 0;
+      for (let i = 0; i < tokens.length; i += 2) {
+        sumSqMils += (MILS[tokens[i]] * MILS[tokens[i]]);
       }
-      justCalculated = true;
+
+      let de_mils = Math.sqrt(sumSqMils);
+      if (de_mils > MILS[1]) return renderError("Thicker than SWG 1");
+      if (de_mils < MILS[50]) return renderError("Thinner than SWG 50");
+
+      let dec = getEquivalentDecimalSWG(sumSqMils);
+      let lower = Math.floor(dec), upper = Math.ceil(dec);
+      if (lower === upper) upper = lower + 1;
+      let progress = (dec - lower) * 100;
+      let de_mm = de_mils * 0.0254;
+
+      outputHTML = `
+        <div class="nearest-swg">Nearest SWG : ${Math.round(dec)}</div>
+        <div class="normal-text">Equivalent swg : ${dec.toFixed(4)}</div>
+        <div class="normal-text">Diameter : ${de_mm.toFixed(3)} mm</div>
+        <div class="scale-container">
+          <div class="scale-line">
+            <div class="scale-mid-tick"></div>
+            <div class="scale-marker" style="left: ${progress}%;"></div>
+          </div>
+          <div class="scale-labels">
+            <span>${lower}</span>
+            <span>${upper}</span>
+          </div>
+        </div>
+      `;
+      mainDisplay.innerText = dec.toFixed(2); 
+      showDetails(outputHTML, false); // Does not auto-expand
     }
   </script>
 </body>
