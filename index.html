@@ -1,622 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon-192.png">
-  <meta name="theme-color" content="#ffffff">
-  <title>SWG Calculator</title>
-
-  <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-      box-sizing: border-box;
-    }
-
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      background: #eef4fb; 
-      margin: 0; 
-      padding: 20px; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-    
-    .calculator { 
-      width: 100%;
-      max-width: 360px; 
-      height: 520px; 
-      background: #fff; 
-      border-radius: 24px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-      position: relative;
-      overflow: hidden;
-    }
-
-    .screen-container {
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 16px;
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      height: 110px; 
-      transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 2;
-      text-align: right;
-    }
-
-    #equation {
-      height: 20px;
-      color: #9e9e9e;
-      font-size: 16px;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    #main-display {
-      color: #ffffff;
-      font-size: 36px;
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
-
-    #expand-arrow {
-      position: absolute;
-      bottom: 10px;
-      left: 16px;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      display: none;
-      padding: 5px;
-      user-select: none;
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-    #expanded-details {
-      display: none;
-      text-align: left;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px dashed #444;
-      opacity: 0;
-      max-height: 260px; 
-      overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    
-    #expanded-details::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .nearest-swg {
-      font-size: 21px;
-      font-weight: bold;
-      color: #ffffff;
-      margin-bottom: 6px;
-    }
-    
-    .normal-text {
-      font-size: 14px;
-      color: #ffffff;
-      margin-bottom: 2px;
-      line-height: 1.4;
-    }
-    
-    .error-text {
-      color: #ef5350;
-      font-size: 15px;
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    .combinations-container {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed #444;
-    }
-    
-    .combo-title {
-      color: #a5d6a7;
-      font-size: 13px;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-    
-    .combo-item {
-      display: flex;
-      justify-content: space-between;
-      color: #fff;
-      font-size: 14px;
-      margin-bottom: 4px;
-      background: rgba(255,255,255,0.05);
-      padding: 5px 8px;
-      border-radius: 6px;
-    }
-    
-    .combo-item span:last-child {
-      color: #ffffff;
-    }
-    
-    .green-bracket { color: #a5d6a7; font-weight: bold; }
-    .white-bracket { color: #ffffff; font-weight: bold; }
-
-    @keyframes fadeIn { to { opacity: 1; } }
-
-    .expanded-mode .screen-container { height: 400px; }
-    .expanded-mode #expand-arrow { display: none !important; }
-    .expanded-mode #expanded-details { display: block; animation: fadeIn 0.3s ease-in 0.1s forwards; }
-    
-    /* Hide all keypads when expanded */
-    .expanded-mode .keypads { opacity: 0; pointer-events: none; transform: translateY(20px); }
-
-    .scale-container { margin-top: 25px; position: relative; }
-    .scale-line { width: 100%; height: 12px; border-bottom: 2px solid #a5d6a7; border-left: 2px solid #a5d6a7; border-right: 2px solid #a5d6a7; position: relative; }
-    .scale-mid-tick { position: absolute; left: 50%; bottom: -2px; width: 2px; height: 6px; background: #a5d6a7; transform: translateX(-50%); }
-    .scale-marker { position: absolute; top: -14px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #fff; transform: translateX(-50%); z-index: 2; }
-    .scale-labels { display: flex; justify-content: space-between; margin-top: 6px; color: #fff; font-size: 14px; font-weight: bold; }
-
-    /* Keypad Section */
-    .keypads {
-      position: absolute;
-      top: 145px;
-      left: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: opacity 0.2s, transform 0.3s;
-      z-index: 1;
-    }
-
-    .grid-3x3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .grid-3x2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    
-    button {
-      background: #f0f4f8; 
-      border: none; 
-      border-radius: 12px; 
-      font-size: 24px;
-      font-weight: 600; 
-      color: #333; 
-      height: 52px; 
-      cursor: pointer; 
-      user-select: none;
-      transition: all 0.1s ease-in-out;
-    }
-    
-    /* Standard numbers */
-    button:active { transform: scale(0.95); background: #333; color: #fff; }
-    
-    /* Color Inversion for Special Buttons */
-    .btn-clear { font-size: 18px; color: #d32f2f; }
-    .btn-clear:active { background: #d32f2f !important; color: #fff !important; }
-    
-    .btn-operator { background: #1976d2; color: #fff; font-size: 28px; }
-    .btn-operator:active { background: #fff !important; color: #1976d2 !important; }
-    
-    .btn-calculate { background: #2e7d32; color: #fff; font-size: 28px; }
-    .btn-calculate:active { background: #fff !important; color: #2e7d32 !important; }
-    
-    .btn-backspace { font-size: 20px; }
-
-    /* The big close button shown only when expanded */
-    .btn-close { 
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: #1976d2; 
-      color: #fff; 
-      font-size: 20px; 
-      text-transform: uppercase; 
-      letter-spacing: 1px; 
-      z-index: 3;
-      height: 56px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      display: none;
-    }
-    .btn-close:active { filter: brightness(0.8); }
-    .expanded-mode .btn-close { display: block; animation: fadeIn 0.3s ease-in forwards; }
-  </style>
-</head>
-<body>
-
-  <div class="calculator" id="calc-app">
-    
-    <div class="screen-container" id="screen">
-      <div id="equation"></div>
-      <div id="main-display">0</div>
-      <div id="expand-arrow" onclick="expandScreen()">▼</div>
-      <div id="expanded-details"></div>
-    </div>
-
-    <div class="keypads">
-      <div class="grid-3x3">
-        <button onclick="press('1')">1</button>
-        <button onclick="press('2')">2</button>
-        <button onclick="press('3')">3</button>
-        <button onclick="press('4')">4</button>
-        <button onclick="press('5')">5</button>
-        <button onclick="press('6')">6</button>
-        <button onclick="press('7')">7</button>
-        <button onclick="press('8')">8</button>
-        <button onclick="press('9')">9</button>
-      </div>
-      <div class="grid-3x2">
-        <button onclick="press('C')" class="btn-clear">Clear</button>
-        <button onclick="press('0')">0</button>
-        <button onclick="press('BACK')" class="btn-backspace">⌫</button>
-        <button onclick="press('+')" class="btn-operator">+</button>
-        <button onclick="press('-')" class="btn-operator">-</button>
-        <button onclick="press('=')" class="btn-calculate">=</button>
-      </div>
-    </div>
-
-    <button class="btn-close" onclick="closeScreen()">CLOSE</button>
-  </div>
-
-  <script>
-    const MILS = {
-      1: 300, 2: 276, 3: 252, 4: 232, 5: 212, 6: 192, 7: 176, 8: 160, 9: 144, 10: 128,
-      11: 116, 12: 104, 13: 92, 14: 80, 15: 72, 16: 64, 17: 56, 18: 48, 19: 40, 20: 36,
-      21: 32, 22: 28, 23: 24, 24: 22, 25: 20, 26: 18, 27: 16.4, 28: 14.8, 29: 13.6, 30: 12.4,
-      31: 11.6, 32: 10.8, 33: 10.0, 34: 9.2, 35: 8.4, 36: 7.6, 37: 6.8, 38: 6.0, 39: 5.2, 40: 4.8,
-      41: 4.4, 42: 4.0, 43: 3.6, 44: 3.2, 45: 2.8, 46: 2.4, 47: 2.0, 48: 1.6, 49: 1.2, 50: 1.0
-    };
-
-    let tokens = []; 
-    let currentNum = "";
-    let justCalculated = false;
-
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const eqDisplay = document.getElementById('equation');
-    const mainDisplay = document.getElementById('main-display');
-    const arrowIcon = document.getElementById('expand-arrow');
-    const calcApp = document.getElementById('calc-app');
-
-    function playClickSound() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const oscGain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.02);
-      oscGain.gain.setValueAtTime(1, audioCtx.currentTime);
-      oscGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.02);
-      osc.connect(oscGain);
-      oscGain.connect(audioCtx.destination);
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + 0.03);
-    }
-
-    function vibratePhone() {
-      if (navigator.vibrate) navigator.vibrate(40); 
-    }
-
-    function updateScreen() {
-      let eqString = tokens.join(" ");
-      if (currentNum !== "" && tokens.length > 0) eqString += " " + currentNum;
-      else if (currentNum !== "") eqString = currentNum;
-      
-      eqDisplay.innerText = eqString;
-      
-      if (!justCalculated) {
-        if (currentNum !== "") {
-          mainDisplay.innerText = currentNum;
-        } else if (tokens.length > 0) {
-          let last = tokens[tokens.length - 1];
-          if (last === '+' || last === '-') {
-            mainDisplay.innerText = tokens.length > 1 ? tokens[tokens.length - 2] : "0";
-          } else {
-            mainDisplay.innerText = last;
-          }
-        } else {
-          mainDisplay.innerText = "0";
-        }
-      }
-    }
-
-    function expandScreen() {
-      vibratePhone();
-      calcApp.classList.add('expanded-mode');
-    }
-
-    function closeScreen() {
-      vibratePhone();
-      calcApp.classList.remove('expanded-mode');
-      if (justCalculated && tokens.length > 0) {
-        arrowIcon.style.display = 'block';
-      }
-    }
-
-    function press(val) {
-      vibratePhone();
-      playClickSound();
-      
-      closeScreen(); 
-
-      if (justCalculated && val !== '=' && val !== '+' && val !== '-' && val !== 'BACK') {
-        tokens = []; currentNum = ""; justCalculated = false; arrowIcon.style.display = 'none';
-      }
-
-      if (val === 'C') {
-        currentNum = ""; tokens = []; justCalculated = false; arrowIcon.style.display = 'none';
-        updateScreen(); return;
-      }
-
-      if (val === 'BACK') {
-        justCalculated = false; arrowIcon.style.display = 'none';
-        if (currentNum.length > 0) {
-          currentNum = currentNum.slice(0, -1);
-        } else if (tokens.length > 0) {
-          let last = tokens.pop();
-          if (last === '+' || last === '-') {
-            currentNum = tokens.length > 0 ? tokens.pop().toString() : "";
-          } else {
-            currentNum = last.toString().slice(0, -1);
-          }
-        }
-        updateScreen(); return;
-      }
-
-      if (val === '+' || val === '-') {
-        if (currentNum !== "") { 
-          tokens.push(parseInt(currentNum)); 
-          tokens.push(val); 
-          currentNum = ""; 
-        } else if (tokens.length > 0) {
-          let last = tokens[tokens.length - 1];
-          if (last === '+' || last === '-') tokens[tokens.length - 1] = val; 
-          else tokens.push(val);
-        }
-        justCalculated = false; arrowIcon.style.display = 'none';
-        updateScreen(); return;
-      }
-
-      if (val === '=') {
-        if (currentNum !== "") { tokens.push(parseInt(currentNum)); currentNum = ""; }
-        if (tokens.length > 0 && (tokens[tokens.length - 1] === '+' || tokens[tokens.length - 1] === '-')) {
-          tokens.pop();
-        }
-        updateScreen();
-        if (tokens.length > 0) calculateResults();
-        return;
-      }
-
-      if (currentNum.length < 2) { currentNum += val; updateScreen(); }
-    }
-
-    function getEquivalentDecimalSWG(sqMils) {
-      let de_mils = Math.sqrt(sqMils);
-      if (de_mils >= MILS[1]) return 1;
-      if (de_mils <= MILS[50]) return 50;
-      for (let g = 1; g < 50; g++) {
-        if (de_mils <= MILS[g] && de_mils >= MILS[g+1]) {
-          let area_upper = MILS[g] * MILS[g];
-          let area_lower = MILS[g+1] * MILS[g+1];
-          let fraction = (area_upper - sqMils) / (area_upper - area_lower);
-          return g + fraction;
-        }
-      }
-      return 0;
-    }
-
-    function getPriority(w1, w2) {
-      let minW = Math.min(w1, w2);
-      let maxW = Math.max(w1, w2);
-      if (minW >= 20 && maxW <= 30) return 1;
-      if (minW >= 11 && maxW <= 40) return 2;
-      return 3;
-    }
-
-    function renderError(msg) {
-      // Displays error on screen WITHOUT enlarging
-      mainDisplay.innerText = "Error";
-      eqDisplay.innerText = msg;
-      arrowIcon.style.display = 'none';
-      document.getElementById('expanded-details').innerHTML = ""; // Clear old details
-      justCalculated = true;
-    }
-
-    function showDetails(html, autoExpand) {
-      document.getElementById('expanded-details').innerHTML = html;
-      justCalculated = true;
-      if (autoExpand) {
-        setTimeout(expandScreen, 50);
-      } else {
-        arrowIcon.style.display = 'block';
-      }
-    }
-
-    function calculateResults() {
-      let outputHTML = "";
-      
-      for (let i = 0; i < tokens.length; i += 2) {
-        let g = tokens[i];
-        if (!MILS[g]) return renderError(`SWG ${g} unsupported (1-50)`);
-      }
-
-      // Mode 1: Combinations (e.g., 25 =) -> Auto-expands
-      if (tokens.length === 1) {
-        let targetGauge = tokens[0];
-        let targetSqMils = MILS[targetGauge] * MILS[targetGauge];
-        let combos = [];
-        
-        for (let i = 1; i <= 50; i++) {
-          for (let j = i; j <= 50; j++) {
-            if (i === targetGauge || j === targetGauge) continue;
-            let sumSq = (MILS[i] * MILS[i]) + (MILS[j] * MILS[j]);
-            let eqDec = getEquivalentDecimalSWG(sumSq);
-            let diffSq = Math.abs(sumSq - targetSqMils);
-            
-            if (Math.abs(targetGauge - eqDec) <= 0.5) {
-              combos.push({ w1: i, w2: j, diff: diffSq, eqDec: eqDec, priority: getPriority(i, j) });
-            }
-          }
-        }
-        
-        combos.sort((a, b) => {
-          return Math.abs(targetGauge - a.eqDec) - Math.abs(targetGauge - b.eqDec);
-        });
-
-        let de_mm = Math.sqrt(targetSqMils) * 0.0254;
-        let area_mm2 = Math.PI * (de_mm * de_mm) / 4;
-        
-        outputHTML += `
-          <div class="normal-text">Diameter : ${de_mm.toFixed(3)} mm</div>
-          <div class="normal-text">Area : ${area_mm2.toFixed(3)} mm²</div>
-          <div class="combinations-container">
-            <div class="combo-title">Top Combinations:</div>
-        `;
-        
-        let displayCount = Math.min(15, combos.length);
-        if (displayCount === 0) {
-            outputHTML += `<div class="normal-text" style="color:#ffb74d;">No close combinations found</div>`;
-        } else {
-            for (let k = 0; k < displayCount; k++) {
-              let eqDec = combos[k].eqDec.toFixed(2);
-              let comboNear = Math.round(combos[k].eqDec);
-              let diff = Math.abs(targetGauge - combos[k].eqDec);
-              let bracketClass = diff < 0.1 ? 'green-bracket' : 'white-bracket';
-              
-              outputHTML += `
-                <div class="combo-item">
-                  <span>${combos[k].w1} + ${combos[k].w2}</span>
-                  <span>≈ swg ${comboNear} <span class="${bracketClass}">[${eqDec}]</span></span>
-                </div>
-              `;
-            }
-        }
-        outputHTML += `</div>`;
-        mainDisplay.innerText = targetGauge; 
-        
-        showDetails(outputHTML, true); // Auto-expands
-        return;
-      }
-      
-      // Mode 2: Subtraction (e.g., 25 - 28 =) -> Auto-expands
-      if (tokens.includes('-')) {
-        if (tokens.length !== 3 || tokens[1] !== '-') return renderError("Use format: Target - Given");
-        
-        let targetA = tokens[0], givenB = tokens[2];
-        let areaA = MILS[targetA] * MILS[targetA];
-        let areaB = MILS[givenB] * MILS[givenB];
-        
-        if (areaA <= areaB) return renderError(`SWG ${targetA} must be thicker than SWG ${givenB}`);
-        
-        let results = [];
-        
-        for (let i = 1; i <= 50; i++) {
-          if (i === targetA) continue;
-          let testArea = areaB + (MILS[i] * MILS[i]);
-          let eqDec = getEquivalentDecimalSWG(testArea);
-          let diffSq = Math.abs(testArea - areaA);
-          
-          if (Math.abs(targetA - eqDec) <= 0.5) {
-            results.push({ w1: givenB, w2: i, diffSq: diffSq, eqDec: eqDec, priority: getPriority(givenB, i) });
-          }
-        }
-        
-        results.sort((a, b) => {
-          return Math.abs(targetA - a.eqDec) - Math.abs(targetA - b.eqDec);
-        });
-        
-        outputHTML += `
-          <div class="combinations-container">
-            <div class="combo-title">To make SWG ${targetA}, add to SWG ${givenB}:</div>
-        `;
-        
-        let displayCount = Math.min(15, results.length);
-        if (displayCount === 0) {
-            outputHTML += `<div class="normal-text" style="color:#ffb74d;">No close combinations found</div>`;
-        } else {
-            for (let k = 0; k < displayCount; k++) {
-              let eqDec = results[k].eqDec.toFixed(2);
-              let diff = Math.abs(targetA - results[k].eqDec);
-              let bracketClass = diff < 0.1 ? 'green-bracket' : 'white-bracket'; 
-              
-              outputHTML += `
-                <div class="combo-item">
-                  <span>${results[k].w1} + ${results[k].w2}</span>
-                  <span>≈ swg ${Math.round(results[k].eqDec)} <span class="${bracketClass}">[${eqDec}]</span></span>
-                </div>
-              `;
-            }
-        }
-        outputHTML += `</div>`;
-        mainDisplay.innerText = targetA;
-        
-        showDetails(outputHTML, true); // Auto-expands
-        return;
-      }
-
-      // Mode 3: Addition Scale (e.g., 25 + 25 =) -> Does NOT auto-expand
-      let sumSqMils = 0;
-      for (let i = 0; i < tokens.length; i += 2) {
-        sumSqMils += (MILS[tokens[i]] * MILS[tokens[i]]);
-      }
-
-      let de_mils = Math.sqrt(sumSqMils);
-      if (de_mils > MILS[1]) return renderError("Thicker than SWG 1");
-      if (de_mils < MILS[50]) return renderError("Thinner than SWG 50");
-
-      let dec = getEquivalentDecimalSWG(sumSqMils);
-      let lower = Math.floor(dec), upper = Math.ceil(dec);
-      if (lower === upper) upper = lower + 1;
-      let progress = (dec - lower) * 100;
-      let de_mm = de_mils * 0.0254;
-
-      outputHTML = `
-        <div class="nearest-swg">Nearest SWG : ${Math.round(dec)}</div>
-        <div class="normal-text">Equivalent swg : ${dec.toFixed(4)}</div>
-        <div class="normal-text">Diameter : ${de_mm.toFixed(3)} mm</div>
-        <div class="scale-container">
-          <div class="scale-line">
-            <div class="scale-mid-tick"></div>
-            <div class="scale-marker" style="left: ${progress}%;"></div>
-          </div>
-          <div class="scale-labels">
-            <span>${lower}</span>
-            <span>${upper}</span>
-          </div>
-        </div>
-      `;
-      mainDisplay.innerText = dec.toFixed(2); 
-      showDetails(outputHTML, false); // Does not auto-expand
-    }
-  </script>
-
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon-192.png"><meta name="theme-color" content="#000000"><title>SWG Parallel Calculator</title>
+<style>
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#111;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;height:100dvh;overflow:hidden;color:#fff}
+.calculator{width:100%;height:100%;max-width:430px;background:#000;display:flex;flex-direction:column;position:relative;overflow:hidden}
+@media (min-width:431px){.calculator{height:90vh;max-height:850px;border-radius:32px;border:6px solid #222;box-shadow:0 20px 50px rgba(0,0,0,0.8)}}
+.screen-container{flex:1 1 0;display:flex;flex-direction:column;padding:24px 20px;position:relative;z-index:2;overflow:hidden;min-height:0}
+#main-content{width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-end;text-align:right}
+#equation{min-height:28px;line-height:28px;color:#a0a0a0;font-size:24px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#main-display{color:#fff;font-size:72px;font-weight:300;letter-spacing:1px;word-break:break-all;line-height:1.1;min-height:80px}
+#expanded-details{display:none;width:100%;height:100%;overflow-y:auto;overscroll-behavior:contain;padding-bottom:16px;scrollbar-width:none;-ms-overflow-style:none}#expanded-details::-webkit-scrollbar{display:none}
+/* Modes Switching */
+.showing-results #main-content{display:none}
+.showing-results #expanded-details{display:block;animation:slideUp .3s ease forwards}
+.showing-results #expanded-details.fit-box{display:flex}
+.combo-title{color:#4caf50;font-size:15px;font-weight:500;margin-bottom:16px;position:sticky;top:0;background:#000;padding-bottom:10px;z-index:1}
+.combo-item{background:#1a1a1a;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;text-align:left;box-shadow:0 2px 8px rgba(0,0,0,0.2)}.combo-eq{color:#9e9e9e;font-size:15px;font-weight:500}.combo-res{color:#fff;font-size:26px;font-weight:400}.green-bracket{color:#4caf50;font-size:18px;font-weight:400;margin-left:4px}.white-bracket{color:#888;font-size:18px;font-weight:400;margin-left:4px}
+.fit-box{flex-direction:column;justify-content:center;overflow:hidden!important;padding-bottom:0!important;height:100%}
+.fit-box .combo-title{position:static;margin-bottom:8px;padding-bottom:0}
+.scale-card{background:#1a1a1a;border-radius:16px;padding:20px;text-align:center;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:100%}.nearest-swg{font-size:32px;font-weight:400;color:#fff;margin-bottom:8px}.normal-text{font-size:15px;color:#888;margin-bottom:4px;line-height:1.5}.scale-container{margin-top:24px;position:relative;padding:0 16px}.scale-line{width:100%;height:12px;border-bottom:2px solid #4caf50;border-left:2px solid #4caf50;border-right:2px solid #4caf50;position:relative;border-radius:0 0 4px 4px}.scale-mid-tick{position:absolute;left:50%;bottom:-2px;width:2px;height:10px;background:#4caf50;transform:translateX(-50%)}.scale-marker{position:absolute;top:-16px;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:14px solid #fff;transform:translateX(-50%);z-index:2;transition:left .3s ease}.scale-labels{display:flex;justify-content:space-between;margin-top:12px;color:#fff;font-size:16px;font-weight:500;margin-left:-8px;margin-right:-8px}
+@keyframes slideUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+/* Masking Wrapper for perfect drag */
+#keypads-wrapper{flex:0 0 auto;width:100%;background:#000;overflow:hidden;padding-bottom:max(16px,env(safe-area-inset-bottom));will-change:height;z-index:10;position:relative}
+.keypads{display:grid;grid-template-columns:repeat(4,1fr);gap:min(3vw,12px);padding:16px 16px 0 16px;max-width:500px;margin:0 auto;width:100%}
+button{background:#2d2d2d;border:none;border-radius:50%;aspect-ratio:1;width:100%;max-width:80px;max-height:80px;margin:0 auto;font-size:32px;font-weight:400;color:#fff;cursor:pointer;user-select:none;transition:all .15s ease-in-out;display:flex;justify-content:center;align-items:center}
+button:active{background:#555}
+.btn-clear{color:#d32f2f} .btn-clear:active{background:#d32f2f!important;color:#fff!important}
+.btn-operator{font-size:36px;color:#4caf50} .btn-operator:active{background:#4caf50!important;color:#fff!important}
+.btn-calculate{background:#ff7043;font-size:40px;font-weight:300} .btn-calculate:active{background:#ff8a65}
+.btn-backspace{font-size:24px}
+/* Expand Button States */
+.btn-expand{font-size:22px;color:#555;background:#1e1e1e;cursor:default;transition:all .2s ease}
+.can-expand .btn-expand{color:#4caf50;cursor:pointer} 
+.can-expand.combo-mode .btn-expand{cursor:grab}
+.can-expand.combo-mode .btn-expand:active{background:#4caf50!important;color:#fff!important;cursor:grabbing}
+.can-expand:not(.combo-mode) .btn-expand:active{background:#4caf50!important;color:#fff!important}
+.keypad-minimized .btn-expand{background:#333;color:#fff}
+</style></head><body>
+<div class="calculator" id="calc-app">
+<div class="screen-container" id="screen"><div id="main-content"><div id="equation"></div><div id="main-display">0</div></div><div id="expanded-details"></div></div>
+<div id="keypads-wrapper">
+<div class="keypads" id="keypads-container">
+<button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button><button class="btn-expand" id="btn-expand">▼</button>
+<button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button><button onclick="press('-')" class="btn-operator">-</button>
+<button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button><button onclick="press('+')" class="btn-operator">+</button>
+<button onclick="press('C')" class="btn-clear">C</button><button onclick="press('0')">0</button><button onclick="press('BACK')" class="btn-backspace">⌫</button><button onclick="press('=')" class="btn-calculate">=</button>
+</div>
+</div>
+</div>
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(() => console.log("Service Worker registered"))
-      .catch(err => console.log("Service Worker registration failed:", err));
-  });
-}
-</script>
+const MILS={1:300,2:276,3:252,4:232,5:212,6:192,7:176,8:160,9:144,10:128,11:116,12:104,13:92,14:80,15:72,16:64,17:56,18:48,19:40,20:36,21:32,22:28,23:24,24:22,25:20,26:18,27:16.4,28:14.8,29:13.6,30:12.4,31:11.6,32:10.8,33:10.0,34:9.2,35:8.4,36:7.6,37:6.8,38:6.0,39:5.2,40:4.8,41:4.4,42:4.0,43:3.6,44:3.2,45:2.8,46:2.4,47:2.0,48:1.6,49:1.2,50:1.0};
+let tokens=[],currentNum="",justCalculated=!1;const audioCtx=new(window.AudioContext||window.webkitAudioContext)(),eqDisplay=document.getElementById('equation'),mainDisplay=document.getElementById('main-display'),calcApp=document.getElementById('calc-app'),expandBtn=document.getElementById('btn-expand'),kpWrapper=document.getElementById('keypads-wrapper');
 
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .then(() => console.log("Service Worker registered"))
-      .catch(err => console.log("Service Worker registration failed:", err));
-  });
-}
-</script>
+let fullH=0,minH=0,canExpand=!1,isKeypadMin=!1,isComboView=!1,isGraphView=!1,graphVisible=!1;
 
-</body>
-</html>
+function initHeights(){if(!fullH){kpWrapper.style.transition='none';kpWrapper.style.height='auto';fullH=kpWrapper.offsetHeight;let padB=parseInt(window.getComputedStyle(kpWrapper).paddingBottom)||16;minH=16+expandBtn.offsetHeight+padB;kpWrapper.style.height=fullH+'px';void kpWrapper.offsetHeight}}
+window.addEventListener('resize',()=>{fullH=0;if(!isKeypadMin)kpWrapper.style.height='auto'});
+
+// Keyboard Event Listener
+window.addEventListener('keydown', function(e) {
+    if(e.key >= '0' && e.key <= '9') press(e.key);
+    else if(e.key === '+' || e.key === '-') press(e.key);
+    else if(e.key === '=' || e.key === 'Enter') press('=');
+    else if(e.key === 'Backspace') press('BACK');
+    else if(e.key.toLowerCase() === 'c' || e.key === 'Escape') press('C');
+});
+
+function playClickSound(){if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(600,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+.02);g.gain.setValueAtTime(1,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.02);o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+.03)}
+function vibratePhone(){if(navigator.vibrate)navigator.vibrate(40)}
+function updateScreen(){let e=tokens.join(" ");if(currentNum!==""&&tokens.length>0)e+=" "+currentNum;else if(currentNum!=="")e=currentNum;eqDisplay.innerText=e;if(!justCalculated){if(currentNum!=="")mainDisplay.innerText=currentNum;else if(tokens.length>0){let l=tokens[tokens.length-1];if(l==='+'||l==='-')mainDisplay.innerText=tokens.length>1?tokens[tokens.length-2]:"0";else mainDisplay.innerText=l}else mainDisplay.innerText="0"}}
+
+function setKeypadMin(minimize){if(!canExpand||!isComboView)return;initHeights();isKeypadMin=minimize;kpWrapper.style.transition='height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';if(minimize){calcApp.classList.add('keypad-minimized');expandBtn.innerHTML='▲';kpWrapper.style.height=minH+'px'}else{calcApp.classList.remove('keypad-minimized');expandBtn.innerHTML='▼';if(fullH)kpWrapper.style.height=fullH+'px'}}
+
+function resetState(){
+    calcApp.classList.remove('showing-results','can-expand','keypad-minimized','combo-mode');
+    document.getElementById('expanded-details').classList.remove('fit-box');
+    expandBtn.innerHTML='▼';
+    if(fullH)kpWrapper.style.height=fullH+'px';
+    canExpand=!1; isComboView=!1; isGraphView=!1; graphVisible=!1; isKeypadMin=!1;
+}
+
+let startY=0,startH=0,isDragging=!1,hasDragged=!1;
+expandBtn.addEventListener('touchstart',(e)=>{
+    if(!canExpand || isGraphView) return; 
+    initHeights();startY=e.touches[0].clientY;startH=isKeypadMin?minH:fullH;isDragging=!0;hasDragged=!1;kpWrapper.style.transition='none'
+},{passive:!0});
+expandBtn.addEventListener('touchmove',(e)=>{if(!isDragging)return;let deltaY=e.touches[0].clientY-startY;if(Math.abs(deltaY)>5)hasDragged=!0;if(!hasDragged)return;let newH=startH-deltaY;if(newH>fullH)newH=fullH;if(newH<minH)newH=minH;kpWrapper.style.height=newH+'px'},{passive:!0});
+expandBtn.addEventListener('touchend',(e)=>{if(!isDragging)return;isDragging=!1;kpWrapper.style.transition='height 0.3s cubic-bezier(0.4, 0, 0.2, 1)';if(hasDragged){let deltaY=e.changedTouches[0].clientY-startY;if(isKeypadMin){if(deltaY<-30)setKeypadMin(!1);else setKeypadMin(!0)}else{if(deltaY>30)setKeypadMin(!0);else setKeypadMin(!1)}}});
+
+expandBtn.addEventListener('click',(e)=>{
+    if(hasDragged)return;
+    if(!canExpand)return;
+    vibratePhone();
+    if(isComboView){
+        resetState();
+    } else if(isGraphView){
+        graphVisible = !graphVisible;
+        if(graphVisible){
+            calcApp.classList.add('showing-results');
+            expandBtn.innerHTML='▲';
+        } else {
+            calcApp.classList.remove('showing-results');
+            expandBtn.innerHTML='▼';
+        }
+    }
+});
+
+function press(v){
+    if(isKeypadMin){if(v==='C')resetState();else return}
+    vibratePhone();playClickSound();
+    if(v==='C'){resetState();currentNum="";tokens=[];justCalculated=!1;updateScreen();return}
+    if(justCalculated&&v!=='='&&v!=='+'&&v!=='-'&&v!=='BACK'){resetState();tokens=[];currentNum="";justCalculated=!1}
+    if(v==='BACK'){justCalculated=!1;if(currentNum.length>0)currentNum=currentNum.slice(0,-1);else if(tokens.length>0){let l=tokens.pop();if(l==='+'||l==='-')currentNum=tokens.length>0?tokens.pop().toString():"";else currentNum=l.toString().slice(0,-1)}updateScreen();return}
+    if(v==='+'||v==='-'){if(currentNum!==""){tokens.push(parseInt(currentNum));tokens.push(v);currentNum=""}else if(tokens.length>0){let l=tokens[tokens.length-1];if(l==='+'||l==='-')tokens[tokens.length-1]=v;else tokens.push(v)}justCalculated=!1;updateScreen();return}
+    if(v==='='){if(currentNum!==""){tokens.push(parseInt(currentNum));currentNum=""}if(tokens.length>0&&(tokens[tokens.length-1]==='+'||tokens[tokens.length-1]==='-'))tokens.pop();updateScreen();if(tokens.length>0)calculateResults();return}
+    if(currentNum.length<2){currentNum+=v;updateScreen()}
+}
+function getEq(s){let d=Math.sqrt(s);if(d>=MILS[1])return 1;if(d<=MILS[50])return 50;for(let g=1;g<50;g++){if(d<=MILS[g]&&d>=MILS[g+1]){let u=MILS[g]*MILS[g],l=MILS[g+1]*MILS[g+1];return g+(u-s)/(u-l)}}return 0}
+function getPri(w1,w2){let m=Math.min(w1,w2),x=Math.max(w1,w2);if(m>=20&&x<=30)return 1;if(m>=11&&x<=40)return 2;return 3}
+function renderErr(m){mainDisplay.innerText="Error";eqDisplay.innerText=m;document.getElementById('expanded-details').innerHTML="";justCalculated=!0}
+
+function showCombo(h){
+    const el=document.getElementById('expanded-details');
+    el.innerHTML=h;
+    el.classList.remove('fit-box');
+    calcApp.classList.add('showing-results', 'can-expand', 'combo-mode');
+    canExpand=!0; isComboView=!0; isGraphView=!1; justCalculated=!0;
+}
+
+function setupGraphReady(h){
+    const el=document.getElementById('expanded-details');
+    el.innerHTML=h;
+    el.classList.add('fit-box');
+    calcApp.classList.remove('showing-results', 'combo-mode'); 
+    calcApp.classList.add('can-expand');
+    canExpand=!0; isComboView=!1; isGraphView=!0; graphVisible=!1; justCalculated=!0;
+    expandBtn.innerHTML='▼';
+}
+
+function calculateResults(){let o="";for(let i=0;i<tokens.length;i+=2){let g=tokens[i];if(!MILS[g])return renderErr(`SWG ${g} unsupported`)}if(tokens.length===1){let t=tokens[0],s=MILS[t]*MILS[t],c=[];for(let i=1;i<=50;i++){for(let j=i;j<=50;j++){if(i===t||j===t)continue;let sq=(MILS[i]*MILS[i])+(MILS[j]*MILS[j]),eq=getEq(sq),df=Math.abs(sq-s);if(Math.abs(t-eq)<=.5)c.push({w1:i,w2:j,diff:df,eqDec:eq,priority:getPri(i,j)})}}c.sort((a,b)=>Math.abs(t-a.eqDec)-Math.abs(t-b.eqDec));let dm=Math.sqrt(s)*.0254,am=Math.PI*(dm*dm)/4;o+=`<div class="combo-title">SWG ${t} Combinations</div>`;let dc=Math.min(25,c.length);if(dc===0)o+=`<div class="normal-text">No combinations found</div>`;else{for(let k=0;k<dc;k++){let eq=c[k].eqDec.toFixed(2),cn=Math.round(c[k].eqDec),bc=Math.abs(t-c[k].eqDec)<.1?'green-bracket':'white-bracket';o+=`<div class="combo-item"><div class="combo-eq">${c[k].w1} + ${c[k].w2}</div><div class="combo-res">${cn} <span class="${bc}">[${eq}]</span></div></div>`}}mainDisplay.innerText=t;showCombo(o);return}if(tokens.includes('-')){if(tokens.length!==3||tokens[1]!=='-')return renderErr("Format: Target - Given");let t=tokens[0],g=tokens[2],aA=MILS[t]*MILS[t],aB=MILS[g]*MILS[g];if(aA<=aB)return renderErr(`SWG ${t} must be thicker than ${g}`);let r=[];for(let i=1;i<=50;i++){if(i===t)continue;let ta=aB+(MILS[i]*MILS[i]),eq=getEq(ta),df=Math.abs(ta-aA);if(Math.abs(t-eq)<=.5)r.push({w1:g,w2:i,diffSq:df,eqDec:eq,priority:getPri(g,i)})}r.sort((a,b)=>Math.abs(t-a.eqDec)-Math.abs(t-b.eqDec));o+=`<div class="combo-title">Add to SWG ${g} to make SWG ${t}</div>`;let dc=Math.min(25,r.length);if(dc===0)o+=`<div class="normal-text">No combinations found</div>`;else{for(let k=0;k<dc;k++){let eq=r[k].eqDec.toFixed(2),bc=Math.abs(t-r[k].eqDec)<.1?'green-bracket':'white-bracket';o+=`<div class="combo-item"><div class="combo-eq">${r[k].w1} + ${r[k].w2}</div><div class="combo-res">${Math.round(r[k].eqDec)} <span class="${bc}">[${eq}]</span></div></div>`}}mainDisplay.innerText=t;showCombo(o);return}let sm=0;for(let i=0;i<tokens.length;i+=2)sm+=(MILS[tokens[i]]*MILS[tokens[i]]);let dm=Math.sqrt(sm);if(dm>MILS[1])return renderErr("Thicker than SWG 1");if(dm<MILS[50])return renderErr("Thinner than SWG 50");let dc=getEq(sm),lw=Math.floor(dc),up=Math.ceil(dc);if(lw===up)up=lw+1;let pr=(dc-lw)*100,dmm=dm*.0254;o=`<div class="combo-title">Total Parallel Value</div><div class="scale-card"><div class="nearest-swg">SWG ${Math.round(dc)}</div><div class="normal-text">Exact Decimal: ${dc.toFixed(4)}</div><div class="normal-text">Diameter: ${dmm.toFixed(3)} mm</div><div class="scale-container"><div class="scale-line"><div class="scale-mid-tick"></div><div class="scale-marker" style="left: ${pr}%;"></div></div><div class="scale-labels"><span>${lw}</span><span>${up}</span></div></div></div>`;mainDisplay.innerText=dc.toFixed(2);setupGraphReady(o)}
+</script></body></html>
