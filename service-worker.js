@@ -1,11 +1,10 @@
-const CACHE_NAME = "swg-calculator-v1";
+const CACHE_NAME = "swg-calculator-v2"; // Version v2 aakki update cheythu
 
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
+  "./logo.svg" // Pazhaya PNGs maatti SVG aakki
 ];
 
 self.addEventListener("install", event => {
